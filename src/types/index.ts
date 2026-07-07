@@ -104,6 +104,7 @@ export interface HourlyPoint {
   value: number;
   robotPct?: number;
   missedByRobot?: number;
+  robotCount?: number;
 }
 
 export interface NotRoutedBreakdown {

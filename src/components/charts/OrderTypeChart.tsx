@@ -83,7 +83,7 @@ function PeriodCards({ data, config }: { data: OrderTypePoint[]; config: TypeCon
       {periods.map(p => (
         <div key={p.label} className="bg-surface-1 rounded-xl p-2.5 text-center">
           <p className="text-[10px] text-ink-tertiary uppercase tracking-wider font-semibold">{p.label}</p>
-          <p className="text-base font-bold text-ink-primary mt-1">{p.pct > 0 ? `${p.pct.toFixed(1)}%` : '—'}</p>
+          <p className="text-base font-bold text-ink-primary mt-1">{p.total > 0 ? `${p.pct.toFixed(1)}%` : '—'}</p>
           <p className="text-[10px] text-ink-tertiary mt-0.5">{p.count.toLocaleString()} orders</p>
         </div>
       ))}

@@ -229,9 +229,9 @@ const groupBy = <T>(arr: T[], key: (v: T) => string): Map<string, T[]> => {
 // ── Orders line chart ─────────────────────────────────────────────────────────
 
 export const getDailyOrders = (rows: RawRow[], days: number, dayType: 'all' | 'weekday' | 'weekend'): DailyPoint[] => {
-  const today = getGSTDateStr();
+  const d1 = getDaysAgoStr(1); // always cap at last complete day
   const from = getDaysAgoStr(days);
-  const filtered = filterByDayType(filterByDateRange(rows, from, today), dayType);
+  const filtered = filterByDayType(filterByDateRange(rows, from, d1), dayType);
   const byDate = groupBy(filtered, r => r.date_);
   return Array.from(byDate.entries())
     .map(([date, rs]) => {
@@ -253,7 +253,7 @@ export const getHourlyOrders = (rows: RawRow[], days: number, dayType: 'all' | '
     const robot = rs.reduce((a, r) => a + r.total_orders_delivered_by_robot, 0);
     const routed = rs.reduce((a, r) => a + r.total_orders_routed_to_robot, 0);
     const missed = Math.max(0, routed - robot);
-    return { hour: h, value: total / uniqueDays, robotPct: total > 0 ? (robot / total) * 100 : 0, missedByRobot: missed / uniqueDays };
+    return { hour: h, value: total / uniqueDays, robotPct: total > 0 ? (robot / total) * 100 : 0, missedByRobot: missed / uniqueDays, robotCount: robot / uniqueDays };
   });
 };
 
@@ -404,8 +404,8 @@ export const getHourlyDeliveryTime = (rows: RawRow[], days: number, solution: So
 // ── Opt-in % (new formula: routed to robot in window / total in window) ───────
 
 export const getDailyOptIn = (rows: RawRow[], days: number, dayType: 'all' | 'weekday' | 'weekend', windowMap?: Map<string, { start: number; end: number }>): OptInPoint[] => {
-  const today = getGSTDateStr();
-  const filtered = filterByDayType(filterByDateRange(rows, getDaysAgoStr(days), today), dayType);
+  const d1 = getDaysAgoStr(1);
+  const filtered = filterByDayType(filterByDateRange(rows, getDaysAgoStr(days), d1), dayType);
   const windowRows = windowMap ? filtered.filter(r => isWithinWindow(r, windowMap)) : filtered;
   const byDate = groupBy(windowRows, r => r.date_);
   return Array.from(byDate.entries()).map(([date, rs]) => {
@@ -483,8 +483,8 @@ export interface CompletionPoint {
 }
 
 export const getDailyCompletionRate = (rows: RawRow[], days: number, dayType: 'all' | 'weekday' | 'weekend'): CompletionPoint[] => {
-  const today = getGSTDateStr();
-  const filtered = filterByDayType(filterByDateRange(rows, getDaysAgoStr(days), today), dayType);
+  const d1 = getDaysAgoStr(1);
+  const filtered = filterByDayType(filterByDateRange(rows, getDaysAgoStr(days), d1), dayType);
   const byDate = groupBy(filtered, r => r.date_);
   return Array.from(byDate.entries()).map(([date, rs]) => {
     const delivered = rs.reduce((a, r) => a + r.total_orders_delivered_by_robot, 0);
@@ -679,7 +679,10 @@ export const getSummaryWithMapping = (rows: RawRow[], solution: SolutionType, ma
   });
 
   const mappedRobots = sMapping.reduce((a, m) => a + m.total_robots, 0);
-  const liveAreas = sMapping.map(m => ({ code: m.geofence_code, name: m.cleaned_name || m.geofence_code, area: m.area }));
+  const seenNames = new Set<string>();
+  const liveAreas = sMapping
+    .map(m => ({ code: m.geofence_code, name: m.cleaned_name || m.geofence_code, area: m.area }))
+    .filter(a => { if (seenNames.has(a.name)) return false; seenNames.add(a.name); return true; });
   // Fall back to geofence count when mapping doesn't have robot counts (e.g. yango sheet has blank column)
   const totalRobots = mappedRobots > 0 ? mappedRobots : liveAreas.length;
   const totalBuildings = liveAreas.length;
@@ -758,8 +761,8 @@ export interface OrderTypePoint { date: string; frozen: number; fragile: number;
 export interface OrderTypePeriod { period: string; frozen: number; fragile: number; lbd: number; }
 
 export const getDailyOrderTypes = (rows: RawRow[], days: number, dayType: 'all' | 'weekday' | 'weekend'): OrderTypePoint[] => {
-  const today = getGSTDateStr();
-  const filtered = filterByDayType(filterByDateRange(rows, getDaysAgoStr(days), today), dayType);
+  const d1 = getDaysAgoStr(1);
+  const filtered = filterByDayType(filterByDateRange(rows, getDaysAgoStr(days), d1), dayType);
   const byDate = groupBy(filtered, r => r.date_);
   return Array.from(byDate.entries()).map(([date, rs]) => ({
     date,
@@ -795,8 +798,8 @@ export interface ForcedPoint { date: string; count: number; }
 export interface ForcedPeriod { period: string; count: number; }
 
 export const getDailyForcedAssignments = (rows: RawRow[], days: number, dayType: 'all' | 'weekday' | 'weekend'): ForcedPoint[] => {
-  const today = getGSTDateStr();
-  const filtered = filterByDayType(filterByDateRange(rows, getDaysAgoStr(days), today), dayType);
+  const d1 = getDaysAgoStr(1);
+  const filtered = filterByDayType(filterByDateRange(rows, getDaysAgoStr(days), d1), dayType);
   const byDate = groupBy(filtered, r => r.date_);
   return Array.from(byDate.entries()).map(([date, rs]) => ({
     date,
@@ -849,8 +852,8 @@ export interface ReturnRatePoint { date: string; undelivered: number; routed: nu
 export interface ReturnRatePeriod { period: string; undelivered: number; routed: number; returnPct: number; successPct: number; }
 
 export const getDailyReturnRate = (rows: RawRow[], days: number, dayType: 'all' | 'weekday' | 'weekend'): ReturnRatePoint[] => {
-  const today = getGSTDateStr();
-  const filtered = filterByDayType(filterByDateRange(rows, getDaysAgoStr(days), today), dayType);
+  const d1 = getDaysAgoStr(1);
+  const filtered = filterByDayType(filterByDateRange(rows, getDaysAgoStr(days), d1), dayType);
   const byDate = groupBy(filtered, r => r.date_);
   return Array.from(byDate.entries()).map(([date, rs]) => {
     const undelivered = rs.reduce((a, r) => a + r.undelivered_robot_orders, 0);
@@ -880,12 +883,13 @@ export const getReturnRateSummary = (rows: RawRow[]): ReturnRatePeriod[] => {
 // ── Chart helpers ─────────────────────────────────────────────────────────────
 
 export const sliceByPeriod = <T extends { date: string }>(data: T[], days: number): T[] => {
+  const d1 = getDaysAgoStr(1);
   if (days === 1) {
-    const d1 = getDaysAgoStr(1);
     return data.filter(d => d.date === d1);
   }
   const from = getDaysAgoStr(days);
-  return data.filter(d => d.date >= from);
+  // Cap at D-1 so periods always reflect complete days only
+  return data.filter(d => d.date >= from && d.date <= d1);
 };
 
 export const addTrendLine = <T>(
