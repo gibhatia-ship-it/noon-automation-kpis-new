@@ -1,0 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --noon-yellow: #D4E600;
+    --noon-red: #DA291C;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    @apply font-sans bg-surface-1 text-ink-primary antialiased;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: rgba(212, 230, 0, 0.3); }
+}
+
+@layer components {
+  .card {
+    @apply bg-surface-0 rounded-2xl shadow-card border border-surface-2 transition-shadow duration-200;
+  }
+  .card:hover { @apply shadow-card-hover; }
+
+  .tab-active {
+    @apply bg-noon-yellow text-ink-primary font-semibold;
+  }
+  .tab-inactive {
+    @apply text-ink-secondary hover:text-ink-primary hover:bg-surface-2 transition-colors;
+  }
+
+  .metric-value {
+    @apply text-3xl font-bold tracking-tight text-ink-primary;
+  }
+  .metric-label {
+    @apply text-xs font-medium text-ink-tertiary uppercase tracking-wider;
+  }
+
+  .shimmer {
+    background: linear-gradient(90deg, #f1f3f5 25%, #e9ecef 50%, #f1f3f5 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  .badge-warning {
+    @apply bg-amber-50 text-amber-700 border border-amber-200;
+  }
+  .badge-critical {
+    @apply bg-red-50 text-noon-red border border-noon-red/20;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
